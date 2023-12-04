@@ -1,0 +1,75 @@
+# Define an HDFS connection for use by applications like the Spark history server
+apiVersion: hdfs.stackable.tech/v1alpha1
+kind: HdfsConnection
+metadata:
+  name: spark-history-hdfs-connection
+spec:
+  # Specify the NameNode URI of your HDFS cluster
+  nameNodeUri: "hdfs://simple-hdfs:8020"
+  # Additional HDFS configuration parameters can be added here
+  # For example, security settings, specific HDFS paths, etc.
+---
+# Example of a ConfigMap for the Spark history server (assuming Spark uses this)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spark-history-server-config
+data:
+  # Spark history server configuration properties
+  spark-defaults.conf: |
+    # HDFS directory for storing application logs
+    spark.history.fs.logDirectory hdfs://simple-hdfs:8020/spark-logs
+    # Other Spark configuration properties...
+---
+# If your HDFS setup requires Kerberos authentication, you might need a secret to store Kerberos credentials
+apiVersion: v1
+kind: Secret
+metadata:
+  name: hdfs-kerberos-secret
+type: Opaque
+data:
+  # Base64 encoded Kerberos keytab and principal
+  hdfs.keytab: <base64_encoded_keytab>
+  hdfs.principal: <base64_encoded_principal>
+---
+# Deployment configuration for the Spark history server (as an example)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spark-history-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spark-history-server
+  template:
+    metadata:
+      labels:
+        app: spark-history-server
+    spec:
+      containers:
+      - name: spark-history-server
+        image: spark-history-server:latest
+        env:
+          - name: SPARK_HISTORY_OPTS
+            valueFrom:
+              configMapKeyRef:
+                name: spark-history-server-config
+                key: spark-defaults.conf
+        resources:
+          # Define the resource requests (minimum resources needed)
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          # Define the resource limits (maximum resources allowed)
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        volumeMounts:
+        - name: kerberos-secret
+          mountPath: /etc/kerberos
+          readOnly: true
+      volumes:
+      - name: kerberos-secret
+        secret:
+          secretName: hdfs-kerberos-secret

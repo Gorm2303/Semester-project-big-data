@@ -1,0 +1,180 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2023-12-04T14:38:32Z"
+  generateName: spark-history-node-default-
+  labels:
+    app.kubernetes.io/component: node
+    app.kubernetes.io/instance: spark-history
+    app.kubernetes.io/managed-by: spark.stackable.tech_history
+    app.kubernetes.io/name: spark-k8s
+    app.kubernetes.io/role-group: default
+    app.kubernetes.io/version: 3.3.0-stackable23.7.0
+    controller-revision-hash: spark-history-node-default-67597bf7d4
+    statefulset.kubernetes.io/pod-name: spark-history-node-default-0
+  name: spark-history-node-default-0
+  namespace: default
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: StatefulSet
+    name: spark-history-node-default
+    uid: ed112761-415c-4a19-85cc-a2b8730bb88e
+  resourceVersion: "14762978"
+  uid: d247bb69-2f95-45e6-bf4d-77740601eda6
+spec:
+  affinity: {}
+  containers:
+  - args:
+    - -c
+    - export AWS_ACCESS_KEY_ID="$(cat /stackable/secrets/history-credentials-class/accessKey)"
+      && export AWS_SECRET_ACCESS_KEY="$(cat /stackable/secrets/history-credentials-class/secretKey)"
+      && /stackable/spark/sbin/start-history-server.sh --properties-file /stackable/spark/conf/spark-defaults.conf
+    command:
+    - /bin/bash
+    env:
+    - name: SPARK_NO_DAEMONIZE
+      value: "true"
+    - name: SPARK_DAEMON_CLASSPATH
+      value: /stackable/spark/extra-jars/*
+    - name: SPARK_HISTORY_OPTS
+      value: -Dlog4j.configurationFile=/stackable/log_config/log4j2.properties -Djava.security.properties=/stackable/spark/conf/security.properties
+        -javaagent:/stackable/jmx/jmx_prometheus_javaagent.jar=18081:/stackable/jmx/config.yaml
+    image: docker.stackable.tech/stackable/spark-k8s:3.3.0-stackable23.7.0
+    imagePullPolicy: IfNotPresent
+    name: spark-history
+    ports:
+    - containerPort: 18080
+      name: http
+      protocol: TCP
+    - containerPort: 18081
+      name: metrics
+      protocol: TCP
+    resources:
+      limits:
+        cpu: "1"
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 512Mi
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /stackable/secrets/history-credentials-class
+      name: history-credentials-class
+    - mountPath: /stackable/spark/conf
+      name: config
+    - mountPath: /stackable/log_config
+      name: log-config
+    - mountPath: /stackable/log
+      name: log
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-99l6k
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: false
+  hostname: spark-history-node-default-0
+  nodeName: bds-g10-n1
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext:
+    fsGroup: 1000
+    runAsGroup: 0
+    runAsUser: 1000
+  serviceAccount: spark-history
+  serviceAccountName: spark-history
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - configMap:
+      defaultMode: 420
+      name: spark-history-node-default
+    name: config
+  - configMap:
+      defaultMode: 420
+      name: spark-history-node-default
+    name: log-config
+  - emptyDir:
+      sizeLimit: 30Mi
+    name: log
+  - ephemeral:
+      volumeClaimTemplate:
+        metadata:
+          annotations:
+            secrets.stackable.tech/class: history-credentials-class
+          creationTimestamp: null
+        spec:
+          accessModes:
+          - ReadWriteOnce
+          resources:
+            requests:
+              storage: "1"
+          storageClassName: secrets.stackable.tech
+          volumeMode: Filesystem
+    name: history-credentials-class
+  - name: kube-api-access-99l6k
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2023-12-04T14:38:34Z"
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2023-12-04T14:38:34Z"
+    message: 'containers with unready status: [spark-history]'
+    reason: ContainersNotReady
+    status: "False"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2023-12-04T14:38:34Z"
+    message: 'containers with unready status: [spark-history]'
+    reason: ContainersNotReady
+    status: "False"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2023-12-04T14:38:33Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - image: docker.stackable.tech/stackable/spark-k8s:3.3.0-stackable23.7.0
+    imageID: ""
+    lastState: {}
+    name: spark-history
+    ready: false
+    restartCount: 0
+    started: false
+    state:
+      waiting:
+        reason: ContainerCreating
+  hostIP: 10.123.252.228
+  phase: Pending
+  qosClass: Burstable
+  startTime: "2023-12-04T14:38:34Z"
