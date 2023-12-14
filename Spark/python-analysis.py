@@ -34,13 +34,13 @@ if __name__ == "__main__":
 
         # Unzip the files
         logging.info("Unzipping files...")
-        unzip_file(sys.argv[1], '/tmp/real_estate')
-        unzip_file(sys.argv[2], '/tmp/yelp')
+        unzip_file(sys.argv[1], '/tmp/real_estate') # Path should maybe be changed S3
+        unzip_file(sys.argv[2], '/tmp/yelp') # Path should maybe be changed S3
 
         # Read the unzipped files
         logging.info("Reading unzipped files...")
         real_estate_df = spark.read.option("header", "true").csv('/tmp/real_estate/*.csv')
-        yelp_df = spark.read.option("header", "true").json('/tmp/yelp/*.json')
+        yelp_df = spark.read.option("multiline", "true").json('/tmp/yelp')
 
         # Save the DataFrames in different formats
         logging.info("Saving DataFrames in different formats...")
