@@ -47,5 +47,3 @@ if __name__ == "__main__":
     finally:
         if spark is not None:
             spark.stop()
-
-    spark.stop()
