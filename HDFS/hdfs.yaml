@@ -17,8 +17,8 @@ spec:
   dataNodes:
     roleGroups:
       default:
-        replicas: 2
+        replicas: 3
   journalNodes:
     roleGroups:
       default:
-        replicas: 2
+        replicas: 3
